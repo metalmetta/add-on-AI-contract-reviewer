@@ -1,7 +1,4 @@
-/**
- * Version Tracking System for AI Suggestions vs Accepted Edits
- * Tracks document changes, AI suggestions, and user decisions
- */
+
 
 // Version tracking configuration
 const VERSION_CONFIG = {

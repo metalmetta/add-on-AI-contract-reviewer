@@ -1,7 +1,4 @@
-/**
- * Redlining and Clause Highlighting Functionality
- * Handles document markup, highlighting, and tracked changes
- */
+
 
 function highlightClausesInDocument(clauses) {
   const doc = DocumentApp.getActiveDocument();

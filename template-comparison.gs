@@ -1,7 +1,4 @@
-/**
- * Template Comparison and Google Drive Integration
- * Compares contracts against standard templates stored in Google Drive
- */
+
 
 // Template configuration
 const TEMPLATE_CONFIG = {

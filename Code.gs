@@ -1,7 +1,4 @@
-/**
- * AI-Powered Contract Reviewer Google Docs Add-on
- * Main entry point and core functionality
- */
+
 
 function onInstall(e) {
   onOpen(e);

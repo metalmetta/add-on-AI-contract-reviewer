@@ -1,7 +1,4 @@
-/**
- * Risk Assessment and Scoring System
- * Analyzes contracts for various risk categories and generates scores
- */
+
 
 // Risk assessment configuration
 const RISK_WEIGHTS = {

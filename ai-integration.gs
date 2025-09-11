@@ -1,8 +1,3 @@
-/**
- * AI API Integration for Contract Analysis
- * This file contains placeholder functions for AI integration
- * Replace with your actual AI service (OpenAI, Claude, custom API, etc.)
- */
 
 // Configuration - OpenAI setup
 const AI_CONFIG = {
