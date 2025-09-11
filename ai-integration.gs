@@ -69,12 +69,24 @@ function generateAIRedlines() {
       };
     }
     
-    // Real AI redlines using OpenAI GPT-5 Nano
+    // Real AI redlines using OpenAI
     const realRedlines = callAIService(docText, 'redline');
+    
+    // Ensure realRedlines is an array
+    const suggestions = Array.isArray(realRedlines) ? realRedlines : [realRedlines];
+    
+    // Apply the suggestions to the document as comments
+    const insertResult = insertRedlineComments(suggestions);
+    
+    if (!insertResult.success) {
+      console.error('Failed to insert redline comments:', insertResult.error);
+      // Still return the suggestions even if commenting failed
+    }
     
     return {
       success: true,
-      suggestions: realRedlines
+      suggestions: suggestions,
+      commentsInserted: insertResult.success ? insertResult.inserted : 0
     };
     
   } catch (error) {
@@ -229,10 +241,37 @@ function parseAIResponse(responseData, operation) {
       throw new Error('No content in AI response');
     }
     
-    // Try to parse JSON response
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+    // Try to extract and parse JSON response
+    let jsonStr = null;
+    
+    // First try to find JSON between code blocks
+    const codeBlockMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+    if (codeBlockMatch) {
+      jsonStr = codeBlockMatch[1].trim();
+    } else {
+      // Try to find JSON object by counting braces
+      const startIndex = content.indexOf('{');
+      if (startIndex !== -1) {
+        let braceCount = 0;
+        let endIndex = startIndex;
+        
+        for (let i = startIndex; i < content.length; i++) {
+          if (content[i] === '{') braceCount++;
+          if (content[i] === '}') braceCount--;
+          if (braceCount === 0) {
+            endIndex = i;
+            break;
+          }
+        }
+        
+        if (braceCount === 0) {
+          jsonStr = content.substring(startIndex, endIndex + 1);
+        }
+      }
+    }
+    
+    if (jsonStr) {
+      return JSON.parse(jsonStr);
     }
     
     // Fallback to text parsing
@@ -240,7 +279,8 @@ function parseAIResponse(responseData, operation) {
     
   } catch (error) {
     console.error('Error parsing AI response:', error);
-    throw new Error('Failed to parse AI response');
+    console.error('Raw content:', responseData.choices[0]?.message?.content);
+    throw new Error(`Failed to parse AI response: ${error.message}`);
   }
 }
 
