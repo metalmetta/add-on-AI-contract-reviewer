@@ -1,0 +1,334 @@
+<script>
+let analysisInProgress = false;
+let currentClauses = [];
+
+function analyzeContract() {
+  if (analysisInProgress) return;
+  
+  analysisInProgress = true;
+  updateUI('analyzing');
+  
+  google.script.run
+    .withSuccessHandler(onAnalysisComplete)
+    .withFailureHandler(onAnalysisError)
+    .analyzeContractAI();
+}
+
+function generateRedlines() {
+  if (analysisInProgress) return;
+  
+  analysisInProgress = true;
+  updateUI('redlining');
+  
+  google.script.run
+    .withSuccessHandler(onRedlinesComplete)
+    .withFailureHandler(onRedlinesError)
+    .generateAIRedlines();
+}
+
+function compareWithTemplate() {
+  const templateSelect = document.getElementById('templateSelect');
+  const selectedTemplate = templateSelect.value;
+  
+  if (!selectedTemplate) {
+    showError('Please select a template to compare with.');
+    return;
+  }
+  
+  updateUI('comparing');
+  
+  google.script.run
+    .withSuccessHandler(onTemplateCompareComplete)
+    .withFailureHandler(onTemplateCompareError)
+    .compareWithTemplate(selectedTemplate);
+}
+
+function filterClauses(riskLevel) {
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  filterBtns.forEach(btn => btn.classList.remove('active'));
+  
+  const activeBtn = document.querySelector(`[data-filter="${riskLevel}"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+  
+  const clauseItems = document.querySelectorAll('.clause-item');
+  clauseItems.forEach(item => {
+    if (riskLevel === 'all' || item.classList.contains(`${riskLevel}-risk`)) {
+      item.style.display = 'block';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
+function acceptSuggestion(suggestionId) {
+  google.script.run
+    .withSuccessHandler(() => {
+      const suggestionElement = document.getElementById(`suggestion-${suggestionId}`);
+      if (suggestionElement) {
+        suggestionElement.style.backgroundColor = '#e8f5e8';
+        suggestionElement.querySelector('.suggestion-actions').innerHTML = 
+          '<span style="color: #4caf50; font-size: 11px;">✓ Applied</span>';
+      }
+      showSuccess('Suggestion applied to document.');
+    })
+    .withFailureHandler(onError)
+    .applySuggestion(suggestionId);
+}
+
+function rejectSuggestion(suggestionId) {
+  const suggestionElement = document.getElementById(`suggestion-${suggestionId}`);
+  if (suggestionElement) {
+    suggestionElement.style.backgroundColor = '#ffebee';
+    suggestionElement.querySelector('.suggestion-actions').innerHTML = 
+      '<span style="color: #f44336; font-size: 11px;">✗ Rejected</span>';
+  }
+}
+
+function onAnalysisComplete(result) {
+  analysisInProgress = false;
+  updateUI('idle');
+  
+  if (result && result.success) {
+    displayRiskScore(result.riskScore);
+    displayClauses(result.clauses);
+    displayResults(result.analysis);
+    showSuccess('Contract analysis completed successfully.');
+  } else {
+    showError('Analysis completed but no results were returned.');
+  }
+}
+
+function onAnalysisError(error) {
+  analysisInProgress = false;
+  updateUI('idle');
+  showError('Error during contract analysis: ' + error.message);
+}
+
+function onRedlinesComplete(result) {
+  analysisInProgress = false;
+  updateUI('idle');
+  
+  if (result && result.success) {
+    displaySuggestions(result.suggestions);
+    showSuccess(`Generated ${result.suggestions.length} redline suggestions.`);
+  } else {
+    showError('Redline generation completed but no suggestions were returned.');
+  }
+}
+
+function onRedlinesError(error) {
+  analysisInProgress = false;
+  updateUI('idle');
+  showError('Error during redline generation: ' + error.message);
+}
+
+function onTemplateCompareComplete(result) {
+  updateUI('idle');
+  
+  if (result && result.success) {
+    displayTemplateResults(result);
+    showSuccess('Template comparison completed.');
+  } else {
+    showError('Template comparison completed but no results were returned.');
+  }
+}
+
+function onTemplateCompareError(error) {
+  updateUI('idle');
+  showError('Error during template comparison: ' + error.message);
+}
+
+function displayRiskScore(riskData) {
+  if (!riskData) return;
+  
+  const scoreElement = document.getElementById('riskScore');
+  const scoreValue = scoreElement.querySelector('.score-value');
+  scoreValue.textContent = riskData.overall || '--';
+  
+  document.getElementById('complianceScore').textContent = riskData.compliance || '--';
+  document.getElementById('financialScore').textContent = riskData.financial || '--';
+  document.getElementById('legalScore').textContent = riskData.legal || '--';
+  
+  // Color code the overall score
+  const score = parseInt(riskData.overall);
+  let color = '#666';
+  if (score >= 80) color = '#d32f2f';
+  else if (score >= 60) color = '#f57c00';
+  else if (score >= 40) color = '#1976d2';
+  else color = '#388e3c';
+  
+  scoreValue.style.color = color;
+}
+
+function displayClauses(clauses) {
+  if (!clauses || !clauses.length) return;
+  
+  currentClauses = clauses;
+  const container = document.getElementById('clausesContainer');
+  
+  const clauseHTML = clauses.map((clause, index) => {
+    const riskClass = `${clause.riskLevel.toLowerCase()}-risk`;
+    return `
+      <div class="clause-item ${riskClass}" data-risk="${clause.riskLevel.toLowerCase()}">
+        <div class="clause-text">"${clause.text}"</div>
+        <div class="clause-analysis">
+          <strong>Risk:</strong> ${clause.riskLevel} | 
+          <strong>Type:</strong> ${clause.type}
+          <br>
+          <strong>Issue:</strong> ${clause.analysis}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  container.innerHTML = clauseHTML;
+}
+
+function displayResults(analysis) {
+  if (!analysis) return;
+  
+  const container = document.getElementById('resultsContainer');
+  container.innerHTML = `
+    <div style="font-size: 13px; line-height: 1.4;">
+      <strong>Analysis Summary:</strong><br>
+      ${analysis.summary || 'No summary available'}
+      <br><br>
+      <strong>Key Findings:</strong>
+      <ul style="margin-left: 16px; margin-top: 8px;">
+        ${(analysis.findings || []).map(finding => `<li>${finding}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function displaySuggestions(suggestions) {
+  if (!suggestions || !suggestions.length) return;
+  
+  const container = document.getElementById('suggestionsContainer');
+  
+  const suggestionsHTML = suggestions.map((suggestion, index) => {
+    return `
+      <div class="suggestion-item" id="suggestion-${index}">
+        <div class="suggestion-header">
+          <span class="suggestion-type">${suggestion.type}</span>
+          <div class="suggestion-actions">
+            <button class="action-btn accept-btn" onclick="acceptSuggestion(${index})">Accept</button>
+            <button class="action-btn reject-btn" onclick="rejectSuggestion(${index})">Reject</button>
+          </div>
+        </div>
+        <div class="suggestion-text">${suggestion.text}</div>
+        <div class="suggestion-rationale">${suggestion.rationale}</div>
+      </div>
+    `;
+  }).join('');
+  
+  container.innerHTML = suggestionsHTML;
+}
+
+function displayTemplateResults(result) {
+  const container = document.getElementById('templateResults');
+  
+  if (result.differences && result.differences.length > 0) {
+    const differencesHTML = result.differences.map(diff => {
+      return `
+        <div class="template-difference" style="margin-bottom: 8px; padding: 8px; background: #fff3e0; border-radius: 4px;">
+          <strong>${diff.section}:</strong> ${diff.description}
+        </div>
+      `;
+    }).join('');
+    
+    container.innerHTML = `
+      <div style="font-size: 12px;">
+        <strong>Template Comparison Results:</strong><br>
+        <div style="margin-top: 8px;">
+          ${differencesHTML}
+        </div>
+        <div style="margin-top: 12px; font-size: 11px; color: #666;">
+          Similarity Score: ${result.similarityScore}%
+        </div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = '<div style="font-size: 12px; color: #666;">No significant differences found.</div>';
+  }
+}
+
+function updateUI(state) {
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const redlineBtn = document.getElementById('redlineBtn');
+  const compareBtn = document.getElementById('compareBtn');
+  
+  switch (state) {
+    case 'analyzing':
+      analyzeBtn.innerHTML = '<span class="spinner"></span> Analyzing...';
+      analyzeBtn.disabled = true;
+      break;
+    case 'redlining':
+      redlineBtn.innerHTML = '<span class="spinner"></span> Generating...';
+      redlineBtn.disabled = true;
+      break;
+    case 'comparing':
+      compareBtn.innerHTML = '<span class="spinner"></span> Comparing...';
+      compareBtn.disabled = true;
+      break;
+    case 'idle':
+    default:
+      analyzeBtn.innerHTML = '<span class="icon">🔍</span> Analyze Contract';
+      analyzeBtn.disabled = false;
+      redlineBtn.innerHTML = '<span class="icon">✏️</span> Generate Redlines';
+      redlineBtn.disabled = false;
+      compareBtn.innerHTML = 'Compare';
+      compareBtn.disabled = false;
+      break;
+  }
+}
+
+function showError(message) {
+  const container = document.querySelector('.container');
+  const existingError = document.querySelector('.error-message');
+  if (existingError) existingError.remove();
+  
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'error-message';
+  errorDiv.textContent = message;
+  
+  container.insertBefore(errorDiv, container.firstChild);
+  
+  setTimeout(() => {
+    if (errorDiv.parentNode) {
+      errorDiv.parentNode.removeChild(errorDiv);
+    }
+  }, 5000);
+}
+
+function showSuccess(message) {
+  const container = document.querySelector('.container');
+  const existingSuccess = document.querySelector('.success-message');
+  if (existingSuccess) existingSuccess.remove();
+  
+  const successDiv = document.createElement('div');
+  successDiv.className = 'success-message';
+  successDiv.textContent = message;
+  
+  container.insertBefore(successDiv, container.firstChild);
+  
+  setTimeout(() => {
+    if (successDiv.parentNode) {
+      successDiv.parentNode.removeChild(successDiv);
+    }
+  }, 3000);
+}
+
+function onError(error) {
+  showError('An unexpected error occurred: ' + error.message);
+}
+
+function openSettings() {
+  google.script.run.openSettings();
+}
+
+// Initialize the sidebar
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Contract AI Reviewer sidebar loaded');
+});
+</script>

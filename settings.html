@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contract AI Settings</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #202124;
+      background-color: #ffffff;
+      padding: 20px;
+    }
+
+    .settings-container {
+      max-width: 100%;
+    }
+
+    .settings-section {
+      margin-bottom: 24px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 16px;
+    }
+
+    .settings-section h3 {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 12px;
+      color: #1976d2;
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 8px 0;
+    }
+
+    .setting-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .setting-label {
+      flex: 1;
+      font-size: 13px;
+      color: #333;
+    }
+
+    .setting-description {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .setting-control {
+      margin-left: 16px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background-color: #ccc;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .toggle-switch.active {
+      background-color: #1976d2;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background-color: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+
+    .toggle-switch.active .toggle-slider {
+      transform: translateX(20px);
+    }
+
+    .input-field {
+      padding: 6px 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      font-size: 13px;
+      width: 120px;
+    }
+
+    .select-field {
+      padding: 6px 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      font-size: 13px;
+      width: 140px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+      background-color: #1976d2;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #1565c0;
+    }
+
+    .btn-secondary {
+      background-color: #f5f5f5;
+      color: #333;
+      border: 1px solid #e0e0e0;
+    }
+
+    .btn-secondary:hover {
+      background-color: #eeeeee;
+    }
+
+    .settings-footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+      text-align: right;
+    }
+
+    .api-key-input {
+      width: 200px;
+      font-family: monospace;
+    }
+
+    .success-message {
+      background-color: #e8f5e8;
+      color: #2e7d32;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .error-message {
+      background-color: #ffebee;
+      color: #c62828;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .advanced-section {
+      background-color: #fafafa;
+      border-left: 4px solid #1976d2;
+    }
+
+    .warning-text {
+      color: #f57c00;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="settings-container">
+    <div id="messageArea"></div>
+
+    <div class="settings-section">
+      <h3>AI Configuration</h3>
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">AI Service Provider</div>
+          <div class="setting-description">Choose your AI service for contract analysis</div>
+        </div>
+        <div class="setting-control">
+          <select class="select-field" id="aiProvider">
+            <option value="openai">OpenAI GPT</option>
+            <option value="claude">Anthropic Claude</option>
+            <option value="custom">Custom API</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">API Key</div>
+          <div class="setting-description">Your AI service API key (stored securely)</div>
+        </div>
+        <div class="setting-control">
+          <input type="password" class="input-field api-key-input" id="apiKey" placeholder="sk-...">
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">AI Model</div>
+          <div class="setting-description">Specific model to use for analysis</div>
+        </div>
+        <div class="setting-control">
+          <input type="text" class="input-field" id="aiModel" value="gpt-5-nano-2025-08-07" placeholder="gpt-5-nano-2025-08-07">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Analysis Preferences</h3>
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Auto-highlight Risk Clauses</div>
+          <div class="setting-description">Automatically highlight high-risk clauses</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch active" onclick="toggleSetting(this, 'autoHighlight')">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Risk Threshold</div>
+          <div class="setting-description">Minimum risk score for highlighting (0-100)</div>
+        </div>
+        <div class="setting-control">
+          <input type="number" class="input-field" id="riskThreshold" value="60" min="0" max="100">
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Default Language</div>
+          <div class="setting-description">Primary language for contract analysis</div>
+        </div>
+        <div class="setting-control">
+          <select class="select-field" id="defaultLanguage">
+            <option value="en">English</option>
+            <option value="it" selected>Italian</option>
+            <option value="de">German</option>
+            <option value="fr">French</option>
+            <option value="es">Spanish</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">GDPR Focus</div>
+          <div class="setting-description">Emphasize GDPR compliance in analysis</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch active" onclick="toggleSetting(this, 'gdprFocus')">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Template Settings</h3>
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Template Folder</div>
+          <div class="setting-description">Google Drive folder for contract templates</div>
+        </div>
+        <div class="setting-control">
+          <input type="text" class="input-field" id="templateFolder" value="Contract Templates" style="width: 160px;">
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Auto-compare Templates</div>
+          <div class="setting-description">Automatically suggest template comparisons</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch" onclick="toggleSetting(this, 'autoCompare')">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Notification Preferences</h3>
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Email Notifications</div>
+          <div class="setting-description">Receive email updates for high-risk findings</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch" onclick="toggleSetting(this, 'emailNotifications')">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Suggestion Notifications</div>
+          <div class="setting-description">Show notifications for new AI suggestions</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch active" onclick="toggleSetting(this, 'suggestionNotifications')">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section advanced-section">
+      <h3>Advanced Settings</h3>
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Version Tracking</div>
+          <div class="setting-description">Track document changes and AI suggestions</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch active" onclick="toggleSetting(this, 'versionTracking')">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Debug Mode</div>
+          <div class="setting-description">Enable debug logging for troubleshooting</div>
+          <div class="warning-text">⚠️ May affect performance</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch" onclick="toggleSetting(this, 'debugMode')">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div>
+          <div class="setting-label">Max Versions</div>
+          <div class="setting-description">Maximum document versions to keep</div>
+        </div>
+        <div class="setting-control">
+          <input type="number" class="input-field" id="maxVersions" value="50" min="10" max="200">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-footer">
+      <button class="btn btn-secondary" onclick="resetSettings()">Reset to Defaults</button>
+      <button class="btn btn-primary" onclick="saveSettings()" style="margin-left: 8px;">Save Settings</button>
+    </div>
+  </div>
+
+  <script>
+    let settings = {};
+
+    function loadSettings() {
+      google.script.run
+        .withSuccessHandler(onSettingsLoaded)
+        .withFailureHandler(onError)
+        .getSettings();
+    }
+
+    function onSettingsLoaded(loadedSettings) {
+      settings = loadedSettings || {};
+      
+      // Update UI with loaded settings
+      document.getElementById('aiProvider').value = settings.aiProvider || 'openai';
+      document.getElementById('aiModel').value = settings.aiModel || 'gpt-5-nano-2025-08-07';
+      document.getElementById('riskThreshold').value = settings.riskThreshold || 60;
+      document.getElementById('defaultLanguage').value = settings.defaultLanguage || 'it';
+      document.getElementById('templateFolder').value = settings.templateFolder || 'Contract Templates';
+      document.getElementById('maxVersions').value = settings.maxVersions || 50;
+      
+      // Update toggles
+      updateToggle('autoHighlight', settings.autoHighlight !== false);
+      updateToggle('gdprFocus', settings.gdprFocus !== false);
+      updateToggle('autoCompare', settings.autoCompare || false);
+      updateToggle('emailNotifications', settings.emailNotifications || false);
+      updateToggle('suggestionNotifications', settings.suggestionNotifications !== false);
+      updateToggle('versionTracking', settings.versionTracking !== false);
+      updateToggle('debugMode', settings.debugMode || false);
+    }
+
+    function updateToggle(settingName, isActive) {
+      const toggles = document.querySelectorAll('.toggle-switch');
+      toggles.forEach(toggle => {
+        const onclick = toggle.getAttribute('onclick');
+        if (onclick && onclick.includes(settingName)) {
+          toggle.classList.toggle('active', isActive);
+        }
+      });
+    }
+
+    function toggleSetting(element, settingName) {
+      element.classList.toggle('active');
+      settings[settingName] = element.classList.contains('active');
+    }
+
+    function saveSettings() {
+      // Collect all settings
+      settings.aiProvider = document.getElementById('aiProvider').value;
+      settings.aiModel = document.getElementById('aiModel').value;
+      settings.riskThreshold = parseInt(document.getElementById('riskThreshold').value);
+      settings.defaultLanguage = document.getElementById('defaultLanguage').value;
+      settings.templateFolder = document.getElementById('templateFolder').value;
+      settings.maxVersions = parseInt(document.getElementById('maxVersions').value);
+
+      // Save API key separately for security
+      const apiKey = document.getElementById('apiKey').value;
+      if (apiKey && apiKey.trim()) {
+        settings.hasApiKey = true;
+      }
+
+      google.script.run
+        .withSuccessHandler(onSettingsSaved)
+        .withFailureHandler(onError)
+        .saveSettings(settings, apiKey);
+    }
+
+    function onSettingsSaved(result) {
+      if (result.success) {
+        showMessage('Settings saved successfully!', 'success');
+      } else {
+        showMessage('Error saving settings: ' + result.error, 'error');
+      }
+    }
+
+    function resetSettings() {
+      if (confirm('Are you sure you want to reset all settings to defaults?')) {
+        google.script.run
+          .withSuccessHandler(() => {
+            showMessage('Settings reset to defaults', 'success');
+            loadSettings();
+          })
+          .withFailureHandler(onError)
+          .resetSettings();
+      }
+    }
+
+    function showMessage(message, type) {
+      const messageArea = document.getElementById('messageArea');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `${type}-message`;
+      messageDiv.textContent = message;
+      
+      messageArea.innerHTML = '';
+      messageArea.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 3000);
+    }
+
+    function onError(error) {
+      showMessage('Error: ' + error.message, 'error');
+    }
+
+    // Load settings when the dialog opens
+    document.addEventListener('DOMContentLoaded', loadSettings);
+  </script>
+</body>
+</html>
